@@ -1,12 +1,16 @@
-import React from 'react';
-
+import React, { useContext } from 'react';
+import {TaskContext} from './App.js'
 import './App.css';
 import {Navbar,Container,Nav,Button} from 'react-bootstrap';
-import CreateTask from './CreateTask';
-const Navbars = ({createT,openModal,addTask}) => {
+
+const Navbars = () => {
+  const{dispatch}=useContext(TaskContext)
+  const createT=()=>{
+    dispatch({type:"MOD",payload:true})
+  }
     return (
         <Container>
-        <Navbar  expand="lg" className="nbar">
+        <Navbar expand="lg" className="nbar">
         <Container>
           <Navbar.Brand href="#home">TaskManager</Navbar.Brand>
           <Navbar.Toggle aria-controls="basic-navbar-nav" />

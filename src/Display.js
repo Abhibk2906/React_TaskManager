@@ -1,46 +1,102 @@
-import React,{useState} from 'react';
+import React,{useState,useEffect, useContext} from 'react';
 import './App.css';
 import {Modal,Form} from 'react-bootstrap';
 import {Card,Container,Row,Col,Button} from 'react-bootstrap';
-const Display = ({dispTasks,addEditValue,deletetask}) => {
+import { TaskContext } from './App';
+const httpHeaders = {
+  'Content-type': 'application/json'
+};
+const Display = ({deletetask}) => {
+
+const{state,dispatch}=useContext(TaskContext)
+const [tasks,setTasks]=useState([]);
+
+//Get tasks
+const values=async()=>{
+  let dataas=await fetch("http://localhost:3000/tasks")
+  let fdata= await dataas.json()
+  return fdata;
+}
+
+//On Load
+   useEffect(()=>{
+    const putdata = async() =>{
+      setTasks(await values());
+    } 
+    putdata();
+  },[state])
+
+
   const [eshow,setEshow]=useState(false);
-  const[tname,setTname]=useState('');
-  const[tsummary,setTsummary]=useState('');
-  const[tdate,setTdate]=useState('');
-  const[time,setTime]=useState('');
-  const [color,setColor]=useState('');
-  const [id,setId]=useState('')
   const handleClose = () => {setEshow(false);}
   const dhandleClose = () => {setEshow(false);}
+
+
+  const [tvalues,setTvalues]=useState({
+    "id":"",
+    "name":"",
+    "summary":"",
+    "date":"",
+    "time":"",
+    "color":""
+  })
+  const valueSubmit=(event)=>{
+    setTvalues({...tvalues,[event.target.name]:event.target.value});
+   }
+
 
    const editTask=async(id)=>{
      setEshow(true);
     let dataas=await fetch(`http://localhost:3000/tasks/${id}`)
     let fdata= await dataas.json()
-    setTname(fdata.name)
-    setTsummary(fdata.summary)
-    setTdate(fdata.date)
-    setTime(fdata.time)
-    setColor(fdata.color)
-    setId(fdata.id)
+    setTvalues({
+      "id":fdata.id,
+      "name":fdata.name,
+      "summary":fdata.summary,
+      "date":fdata.date,
+      "time":fdata.time,
+      "color":fdata.color
+    })
+   
    }
 
 
+   //EDIT ROUTE
+   const addEdit=async()=>{
+    let ldata={
+          name:tvalues.name,
+          summary:tvalues.summary,
+          date:tvalues.date,
+          time:tvalues.time,
+          color:tvalues.color
+        }
+        let dataas=await fetch(`http://localhost:3000/tasks/${tvalues.id}`,{
+          method: 'PUT',
+          body: JSON.stringify(ldata),
+          headers: httpHeaders
+        });
+       let Edata= await dataas.json();
+        dispatch({type:"PUT",payload:Edata})
+        dispatch({type:"MOD",payload:false})
+   }
 
-   const deleteTask=(id)=>{
-       deletetask({id})
+
+   //DELETE ROUTE
+   const deleteTask=async(id)=>{
+    await fetch(`http://localhost:3000/tasks/${id}`,{
+          method: 'DELETE',
+          headers: httpHeaders
+        });
+        setTasks(await values());
     }
 
-   const addEdit=()=>{
-     addEditValue({id,tname,tsummary,tdate,time,color})
-   }
-
-
+    
     return (
     <Container style={{"paddingTop":"10px"}}>
-<Row xs={1} md={3} className="g-4">
-      {dispTasks.map((task)=> 
-      <Col>
+      <Row xs={1} md={3} className="g-4">
+      {tasks.map((task)=> 
+    
+      <Col key={task.id}>
         <Card
               bg={task.color}
                key={task.id}
@@ -48,7 +104,7 @@ const Display = ({dispTasks,addEditValue,deletetask}) => {
              style={{ width: '18rem' }}
             className="mb-2"
             >
-            <Card.Header> <h4>{task.name}</h4>&nbsp;<b>Complete By:</b>{task.date}</Card.Header>
+            <Card.Header> <h4>{task.name}</h4>&nbsp;<b>Complete By: </b>{task.date}</Card.Header>
         <Card.Body>
                <Card.Text>
                 {task.summary}
@@ -83,15 +139,15 @@ const Display = ({dispTasks,addEditValue,deletetask}) => {
       <Form>
   <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
     <Form.Label>Enter Task-Name </Form.Label>
-    <Form.Control type="text" placeholder="Task Title" value={tname} onChange={e =>setTname(e.target.value)} />
+    <Form.Control type="text" placeholder="Task Title" value={tvalues.name} name="name" onChange={valueSubmit} />
   </Form.Group>
   <Form.Group className="mb-3" controlId="exampleForm.ControlTextarea1">
     <Form.Label>Enter Task-Summary</Form.Label>
-    <Form.Control as="textarea" placeholder="Task Summary" rows={3} value={tsummary} onChange={e =>setTsummary(e.target.value)}/>
+    <Form.Control as="textarea" placeholder="Task Summary" rows={3} value={tvalues.summary} name="summary" onChange={valueSubmit}/>
   </Form.Group>
   <Form.Group controlId="formFile" className="mb-3">
                <Form.Label><h5>Enter Schedule Date</h5></Form.Label>
-              <Form.Control type="date" value={tdate} onChange={e =>setTdate(e.target.value)}/>
+              <Form.Control type="date" value={tvalues.date} name="date" onChange={valueSubmit}/>
     </Form.Group>
    </Form>
       </Modal.Body>
